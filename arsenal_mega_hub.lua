@@ -4,10 +4,11 @@ local UIS = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 
+-- Load Rayfield UI
 local Rayfield = loadstring(game:HttpGet("https://raw.githubusercontent.com/shlexware/Rayfield/main/source.lua"))()
 
 local Window = Rayfield:CreateWindow({
-    Name = "SKY Arsenal Mega Hub",
+    Name = "SKY Arsenal Hub",
     LoadingTitle = "SKY Arsenal",
     LoadingSubtitle = "by jeeqz11",
     ConfigurationSaving = {
@@ -21,13 +22,9 @@ local Window = Rayfield:CreateWindow({
 -- Variables
 local AimbotEnabled, ESPEnabled = false, false
 local Smoothness, FOVSize = 0.2, 120
-local TeamCheck, VisibleCheck, Prediction = true, false, false
-local SilentAim, TracersEnabled, BoxESPEnabled = false, false, false
-local NameESP, HealthESP, DistanceESP, ChamsEnabled = false, false, false, false
-local OutlineESP, FlyEnabled, InfiniteJumpEnabled, RapidFireEnabled = false, false, false, false
-local NoRecoilEnabled, NoSpreadEnabled = false, false
-local Holding = false
+local TeamCheck = true
 local AimPart = "Head"
+local Holding = false
 
 -- FOV Circle
 local FOVCircle = Drawing.new("Circle")
@@ -61,7 +58,7 @@ local function GetClosest()
     return closest
 end
 
--- Aimbot
+-- Aimbot logic
 UIS.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton2 then
         Holding = true
@@ -130,44 +127,7 @@ end)
 
 RunService.RenderStepped:Connect(UpdateESP)
 
--- Arsenal Exploits
--- Rapid fire & no recoil hook (very basic)
-local mt = getrawmetatable(game)
-local backup = mt.__namecall
-setreadonly(mt, false)
-mt.__namecall = newcclosure(function(...)
-    local args = {...}
-    local method = getnamecallmethod()
-    if RapidFireEnabled and tostring(method) == "FireServer" and tostring(args[1]) == "Weapon" then
-        args[2] = 0.05
-    end
-    return backup(unpack(args))
-end)
-setreadonly(mt, true)
-
-UIS.JumpRequest:Connect(function()
-    if InfiniteJumpEnabled then
-        LocalPlayer.Character:FindFirstChildOfClass("Humanoid"):ChangeState("Jumping")
-    end
-end)
-
--- Fly (unstable)
-local BodyVelocity = nil
-RunService.RenderStepped:Connect(function()
-    if FlyEnabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-        if not BodyVelocity then
-            BodyVelocity = Instance.new("BodyVelocity", LocalPlayer.Character.HumanoidRootPart)
-            BodyVelocity.Velocity = Vector3.new()
-            BodyVelocity.MaxForce = Vector3.new(400000,400000,400000)
-        end
-        BodyVelocity.Velocity = Camera.CFrame.LookVector * 100
-    elseif BodyVelocity then
-        BodyVelocity:Destroy()
-        BodyVelocity = nil
-    end
-end)
-
--- UI
+-- Aimbot Tab
 local AimbotTab = Window:CreateTab("🎯 Aimbot", 4483362458)
 AimbotTab:CreateToggle({
     Name = "Enable Aimbot",
@@ -200,95 +160,20 @@ AimbotTab:CreateDropdown({
     Callback = function(Value) AimPart = Value end,
 })
 AimbotTab:CreateToggle({
-    Name = "Silent Aim (Unstable)",
-    CurrentValue = false,
-    Callback = function(Value) SilentAim = Value end,
-})
-AimbotTab:CreateToggle({
-    Name = "Visible Check (Experimental)",
-    CurrentValue = false,
-    Callback = function(Value) VisibleCheck = Value end,
-})
-AimbotTab:CreateToggle({
-    Name = "Prediction (Experimental)",
-    CurrentValue = false,
-    Callback = function(Value) Prediction = Value end,
-})
-AimbotTab:CreateToggle({
     Name = "FOV Circle Visible",
     CurrentValue = true,
     Callback = function(Value) FOVCircle.Visible = Value end,
 })
 
+-- Visual Tab
 local VisualTab = Window:CreateTab("👁️ Visual", 4483362458)
 VisualTab:CreateToggle({
     Name = "Enable ESP",
     CurrentValue = false,
     Callback = function(Value) ESPEnabled = Value end,
 })
-VisualTab:CreateToggle({
-    Name = "Box ESP (Unstable)",
-    CurrentValue = false,
-    Callback = function(Value) BoxESPEnabled = Value end,
-})
-VisualTab:CreateToggle({
-    Name = "Tracers",
-    CurrentValue = false,
-    Callback = function(Value) TracersEnabled = Value end,
-})
-VisualTab:CreateToggle({
-    Name = "Name ESP",
-    CurrentValue = false,
-    Callback = function(Value) NameESP = Value end,
-})
-VisualTab:CreateToggle({
-    Name = "Health Bar ESP",
-    CurrentValue = false,
-    Callback = function(Value) HealthESP = Value end,
-})
-VisualTab:CreateToggle({
-    Name = "Distance ESP",
-    CurrentValue = false,
-    Callback = function(Value) DistanceESP = Value end,
-})
-VisualTab:CreateToggle({
-    Name = "Chams (Experimental)",
-    CurrentValue = false,
-    Callback = function(Value) ChamsEnabled = Value end,
-})
-VisualTab:CreateToggle({
-    Name = "Outline ESP",
-    CurrentValue = false,
-    Callback = function(Value) OutlineESP = Value end,
-})
 
-local ExploitTab = Window:CreateTab("⚡ Exploits", 4483362458)
-ExploitTab:CreateToggle({
-    Name = "Rapid Fire",
-    CurrentValue = false,
-    Callback = function(Value) RapidFireEnabled = Value end,
-})
-ExploitTab:CreateToggle({
-    Name = "Infinite Jump",
-    CurrentValue = false,
-    Callback = function(Value) InfiniteJumpEnabled = Value end,
-})
-ExploitTab:CreateToggle({
-    Name = "No Recoil",
-    CurrentValue = false,
-    Callback = function(Value) NoRecoilEnabled = Value end,
-})
-ExploitTab:CreateToggle({
-    Name = "No Spread",
-    CurrentValue = false,
-    Callback = function(Value) NoSpreadEnabled = Value end,
-})
-ExploitTab:CreateToggle({
-    Name = "Fly (Unstable)",
-    CurrentValue = false,
-    Callback = function(Value) FlyEnabled = Value end,
-})
-
+-- UI Settings
 local SettingsTab = Window:CreateTab("⚙️ UI Settings", 4483362458)
 SettingsTab:CreateKeybind({
     Name = "Toggle UI",
@@ -297,7 +182,7 @@ SettingsTab:CreateKeybind({
     Callback = function() Rayfield:Toggle() end,
 })
 SettingsTab:CreateColorPicker({
-    Name = "Theme Color",
+    Name = "FOV Circle Color",
     Color = Color3.fromRGB(0,255,0),
     Callback = function(Value) FOVCircle.Color = Value end,
 })
