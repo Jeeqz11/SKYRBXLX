@@ -1,18 +1,18 @@
---// SERVICES
+--// SkyWare - by jeeqz11
+
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UIS = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 
---// VARIABLES
 local AimbotEnabled, ESPEnabled = false, false
 local Smoothness, FOVSize = 0.2, 120
 local TeamCheck = true
 local AimPart = "Head"
 local Holding = false
 
---// GET CLOSEST FUNCTION
+-- Aimbot logic
 local function IsEnemy(player)
     return player.Team ~= LocalPlayer.Team
 end
@@ -34,12 +34,12 @@ local function GetClosest()
     return closest
 end
 
---// AIMBOT
 UIS.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton2 then
         Holding = true
     end
 end)
+
 UIS.InputEnded:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton2 then
         Holding = false
@@ -56,14 +56,14 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
---// ESP
+-- ESP logic
 local Highlights = {}
 
 local function CreateESP(player)
     if Highlights[player] then return end
     local highlight = Instance.new("Highlight")
     highlight.FillColor = Color3.fromRGB(0, 255, 0)
-    highlight.FillTransparency = 0.3
+    highlight.FillTransparency = 0.4
     highlight.OutlineTransparency = 0
     highlight.Adornee = player.Character
     highlight.Parent = player.Character
@@ -85,81 +85,117 @@ local function UpdateESP()
             else
                 RemoveESP(player)
             end
+        else
+            RemoveESP(player)
         end
     end
 end
 
-Players.PlayerAdded:Connect(function(p)
-    p.CharacterAdded:Connect(function()
+Players.PlayerAdded:Connect(function(player)
+    player.CharacterAdded:Connect(function()
+        wait(1)
         if ESPEnabled then
-            wait(1)
-            CreateESP(p)
+            CreateESP(player)
         end
     end)
 end)
 
 RunService.RenderStepped:Connect(UpdateESP)
 
---// BASIC GUI
+-- UI
 local ScreenGui = Instance.new("ScreenGui", game:GetService("CoreGui"))
-local Frame = Instance.new("Frame", ScreenGui)
-Frame.Size = UDim2.new(0, 250, 0, 300)
-Frame.Position = UDim2.new(0, 50, 0, 50)
-Frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-Frame.Active = true
-Frame.Draggable = true
+ScreenGui.Name = "SkyWareUI"
 
-local ESPButton = Instance.new("TextButton", Frame)
-ESPButton.Size = UDim2.new(0, 200, 0, 50)
-ESPButton.Position = UDim2.new(0, 25, 0, 20)
-ESPButton.Text = "Toggle ESP (OFF)"
-ESPButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-ESPButton.TextColor3 = Color3.new(1, 1, 1)
+local MainFrame = Instance.new("Frame", ScreenGui)
+MainFrame.Size = UDim2.new(0, 500, 0, 300)
+MainFrame.Position = UDim2.new(0, 50, 0, 50)
+MainFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+MainFrame.Active = true
+MainFrame.Draggable = true
 
-ESPButton.MouseButton1Click:Connect(function()
-    ESPEnabled = not ESPEnabled
-    ESPButton.Text = "Toggle ESP (" .. (ESPEnabled and "ON" or "OFF") .. ")"
+-- Tabs
+local TabsFrame = Instance.new("Frame", MainFrame)
+TabsFrame.Size = UDim2.new(0, 120, 1, 0)
+TabsFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+
+local ContentFrame = Instance.new("Frame", MainFrame)
+ContentFrame.Size = UDim2.new(1, -120, 1, 0)
+ContentFrame.Position = UDim2.new(0, 120, 0, 0)
+ContentFrame.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+
+local function ClearContent()
+    for _, v in pairs(ContentFrame:GetChildren()) do
+        if v:IsA("GuiObject") then
+            v:Destroy()
+        end
+    end
+end
+
+local function CreateTab(name, callback)
+    local Button = Instance.new("TextButton", TabsFrame)
+    Button.Size = UDim2.new(1, 0, 0, 50)
+    Button.Text = name
+    Button.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    Button.TextColor3 = Color3.new(1, 1, 1)
+    Button.MouseButton1Click:Connect(function()
+        ClearContent()
+        callback()
+    end)
+end
+
+-- Aimbot tab
+CreateTab("Aimbot", function()
+    local Toggle = Instance.new("TextButton", ContentFrame)
+    Toggle.Size = UDim2.new(0, 250, 0, 50)
+    Toggle.Position = UDim2.new(0, 20, 0, 20)
+    Toggle.Text = "Aimbot: OFF"
+    Toggle.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+    Toggle.TextColor3 = Color3.new(1, 1, 1)
+
+    Toggle.MouseButton1Click:Connect(function()
+        AimbotEnabled = not AimbotEnabled
+        Toggle.Text = "Aimbot: " .. (AimbotEnabled and "ON" or "OFF")
+    end)
+
+    local Smooth = Instance.new("TextButton", ContentFrame)
+    Smooth.Size = UDim2.new(0, 250, 0, 50)
+    Smooth.Position = UDim2.new(0, 20, 0, 90)
+    Smooth.Text = "Smoothness: " .. string.format("%.2f", Smoothness)
+    Smooth.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+    Smooth.TextColor3 = Color3.new(1, 1, 1)
+
+    Smooth.MouseButton1Click:Connect(function()
+        Smoothness = Smoothness + 0.05
+        if Smoothness > 1 then Smoothness = 0
+        end
+        Smooth.Text = "Smoothness: " .. string.format("%.2f", Smoothness)
+    end)
 end)
 
-local AimbotButton = Instance.new("TextButton", Frame)
-AimbotButton.Size = UDim2.new(0, 200, 0, 50)
-AimbotButton.Position = UDim2.new(0, 25, 0, 90)
-AimbotButton.Text = "Toggle Aimbot (OFF)"
-AimbotButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-AimbotButton.TextColor3 = Color3.new(1, 1, 1)
+-- ESP tab
+CreateTab("ESP", function()
+    local ToggleESP = Instance.new("TextButton", ContentFrame)
+    ToggleESP.Size = UDim2.new(0, 250, 0, 50)
+    ToggleESP.Position = UDim2.new(0, 20, 0, 20)
+    ToggleESP.Text = "ESP: OFF"
+    ToggleESP.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+    ToggleESP.TextColor3 = Color3.new(1, 1, 1)
 
-AimbotButton.MouseButton1Click:Connect(function()
-    AimbotEnabled = not AimbotEnabled
-    AimbotButton.Text = "Toggle Aimbot (" .. (AimbotEnabled and "ON" or "OFF") .. ")"
+    ToggleESP.MouseButton1Click:Connect(function()
+        ESPEnabled = not ESPEnabled
+        ToggleESP.Text = "ESP: " .. (ESPEnabled and "ON" or "OFF")
+    end)
+
+    local TeamCheckToggle = Instance.new("TextButton", ContentFrame)
+    TeamCheckToggle.Size = UDim2.new(0, 250, 0, 50)
+    TeamCheckToggle.Position = UDim2.new(0, 20, 0, 90)
+    TeamCheckToggle.Text = "Team Check: ON"
+    TeamCheckToggle.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+    TeamCheckToggle.TextColor3 = Color3.new(1, 1, 1)
+
+    TeamCheckToggle.MouseButton1Click:Connect(function()
+        TeamCheck = not TeamCheck
+        TeamCheckToggle.Text = "Team Check: " .. (TeamCheck and "ON" or "OFF")
+    end)
 end)
 
-local SmoothLabel = Instance.new("TextLabel", Frame)
-SmoothLabel.Size = UDim2.new(0, 200, 0, 30)
-SmoothLabel.Position = UDim2.new(0, 25, 0, 160)
-SmoothLabel.Text = "Smoothness: " .. tostring(Smoothness)
-SmoothLabel.BackgroundTransparency = 1
-SmoothLabel.TextColor3 = Color3.new(1, 1, 1)
-
-local SmoothSlider = Instance.new("TextButton", Frame)
-SmoothSlider.Size = UDim2.new(0, 200, 0, 30)
-SmoothSlider.Position = UDim2.new(0, 25, 0, 200)
-SmoothSlider.Text = "Increase Smoothness"
-SmoothSlider.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-SmoothSlider.TextColor3 = Color3.new(1, 1, 1)
-
-SmoothSlider.MouseButton1Click:Connect(function()
-    Smoothness = Smoothness + 0.05
-    if Smoothness > 1 then Smoothness = 0 end
-    SmoothLabel.Text = "Smoothness: " .. string.format("%.2f", Smoothness)
-end)
-
-local CloseButton = Instance.new("TextButton", Frame)
-CloseButton.Size = UDim2.new(0, 200, 0, 30)
-CloseButton.Position = UDim2.new(0, 25, 0, 250)
-CloseButton.Text = "Close UI"
-CloseButton.BackgroundColor3 = Color3.fromRGB(120, 0, 0)
-CloseButton.TextColor3 = Color3.new(1, 1, 1)
-
-CloseButton.MouseButton1Click:Connect(function()
-    ScreenGui.Enabled = false
-end)
