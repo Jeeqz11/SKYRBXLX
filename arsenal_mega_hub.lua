@@ -1,19 +1,17 @@
--- SkyWare v2 - Final Full Script
+-- SkyWare v2 - Final Final Version
 
--- Load Linoria UI Library
+-- Load Linoria
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/violin-suzutsuki/LinoriaLib/main/Library.lua"))()
 local ThemeManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/violin-suzutsuki/LinoriaLib/main/addons/ThemeManager.lua"))()
 local SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/violin-suzutsuki/LinoriaLib/main/addons/SaveManager.lua"))()
 
--- Services
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 
--- Variables
-local ESPEnabled, BoxESPEnabled, TracerESPEnabled, TeamCheckESP = false, false, false, true
+local ESPEnabled, TeamCheckESP = false, true
 local AimbotEnabled, TeamCheckAimbot, FOVCircleEnabled = false, true, true
 local Smoothness, FOVRadius = 0.2, 120
 local ESPColor = Color3.fromRGB(0, 255, 0)
@@ -21,7 +19,6 @@ local AimPart = "Head"
 local AimbotKey = Enum.UserInputType.MouseButton2
 local Holding = false
 
--- FOV Circle
 local FOVCircle = Drawing.new("Circle")
 FOVCircle.Color = Color3.fromRGB(255, 255, 255)
 FOVCircle.Thickness = 1
@@ -29,19 +26,18 @@ FOVCircle.Filled = false
 FOVCircle.Radius = FOVRadius
 FOVCircle.Visible = FOVCircleEnabled
 
--- Aimbot functions
 local function IsEnemy(player)
     return player.Team ~= LocalPlayer.Team
 end
 
 local function GetClosest()
     local closest, dist = nil, math.huge
-    local mouseLocation = UserInputService:GetMouseLocation()
+    local mouse = UserInputService:GetMouseLocation()
     for _, player in ipairs(Players:GetPlayers()) do
         if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild(AimPart) and (not TeamCheckAimbot or IsEnemy(player)) then
             local pos, visible = Camera:WorldToViewportPoint(player.Character[AimPart].Position)
             if visible then
-                local mag = (Vector2.new(pos.X, pos.Y) - Vector2.new(mouseLocation.X, mouseLocation.Y)).Magnitude
+                local mag = (Vector2.new(pos.X, pos.Y) - Vector2.new(mouse.X, mouse.Y)).Magnitude
                 if mag < dist and mag < FOVRadius then
                     closest, dist = player, mag
                 end
@@ -140,7 +136,7 @@ local Tabs = {
 }
 
 -- Visuals
-Tabs.Visuals:AddToggle("ESPEnabled", { Text = "Highlight ESP", Default = false }):OnChanged(function(Value)
+Tabs.Visuals:AddToggle("ESPEnabled", { Text = "Enable ESP", Default = false }):OnChanged(function(Value)
     ESPEnabled = Value
 end)
 
