@@ -1,46 +1,22 @@
+--// SERVICES
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UIS = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 
--- Load Rayfield UI
-local Rayfield = loadstring(game:HttpGet("https://raw.githubusercontent.com/shlexware/Rayfield/main/source.lua"))()
-
-local Window = Rayfield:CreateWindow({
-    Name = "SKY Arsenal Hub",
-    LoadingTitle = "SKY Arsenal",
-    LoadingSubtitle = "by jeeqz11",
-    ConfigurationSaving = {
-        Enabled = true,
-        FolderName = "SKYArsenalConfigs",
-        FileName = "Settings"
-    },
-    KeySystem = false
-})
-
--- Variables
+--// VARIABLES
 local AimbotEnabled, ESPEnabled = false, false
 local Smoothness, FOVSize = 0.2, 120
 local TeamCheck = true
 local AimPart = "Head"
 local Holding = false
 
--- FOV Circle
-local FOVCircle = Drawing.new("Circle")
-FOVCircle.Color = Color3.fromRGB(0, 255, 0)
-FOVCircle.Radius = FOVSize
-FOVCircle.Thickness = 2
-FOVCircle.Filled = false
-FOVCircle.Transparency = 1
-FOVCircle.Visible = true
-
--- Arsenal enemy check
+--// GET CLOSEST FUNCTION
 local function IsEnemy(player)
     return player.Team ~= LocalPlayer.Team
 end
 
--- Get closest player
 local function GetClosest()
     local closest, dist = nil, math.huge
     local mouseLocation = UIS:GetMouseLocation()
@@ -58,7 +34,7 @@ local function GetClosest()
     return closest
 end
 
--- Aimbot logic
+--// AIMBOT
 UIS.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton2 then
         Holding = true
@@ -71,10 +47,6 @@ UIS.InputEnded:Connect(function(input)
 end)
 
 RunService.RenderStepped:Connect(function()
-    FOVCircle.Position = UIS:GetMouseLocation()
-    FOVCircle.Radius = FOVSize
-    FOVCircle.Visible = AimbotEnabled
-
     if AimbotEnabled and Holding then
         local target = GetClosest()
         if target and target.Character and target.Character:FindFirstChild(AimPart) then
@@ -84,8 +56,9 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- ESP highlight
+--// ESP
 local Highlights = {}
+
 local function CreateESP(player)
     if Highlights[player] then return end
     local highlight = Instance.new("Highlight")
@@ -127,62 +100,66 @@ end)
 
 RunService.RenderStepped:Connect(UpdateESP)
 
--- Aimbot Tab
-local AimbotTab = Window:CreateTab("🎯 Aimbot", 4483362458)
-AimbotTab:CreateToggle({
-    Name = "Enable Aimbot",
-    CurrentValue = false,
-    Callback = function(Value) AimbotEnabled = Value end,
-})
-AimbotTab:CreateSlider({
-    Name = "Smoothness",
-    Range = {0, 1},
-    Increment = 0.01,
-    CurrentValue = Smoothness,
-    Callback = function(Value) Smoothness = Value end,
-})
-AimbotTab:CreateSlider({
-    Name = "FOV Size",
-    Range = {50, 300},
-    Increment = 1,
-    CurrentValue = FOVSize,
-    Callback = function(Value) FOVSize = Value end,
-})
-AimbotTab:CreateToggle({
-    Name = "Team Check",
-    CurrentValue = true,
-    Callback = function(Value) TeamCheck = Value end,
-})
-AimbotTab:CreateDropdown({
-    Name = "Aim Part",
-    Options = {"Head", "Torso"},
-    CurrentOption = "Head",
-    Callback = function(Value) AimPart = Value end,
-})
-AimbotTab:CreateToggle({
-    Name = "FOV Circle Visible",
-    CurrentValue = true,
-    Callback = function(Value) FOVCircle.Visible = Value end,
-})
+--// BASIC GUI
+local ScreenGui = Instance.new("ScreenGui", game:GetService("CoreGui"))
+local Frame = Instance.new("Frame", ScreenGui)
+Frame.Size = UDim2.new(0, 250, 0, 300)
+Frame.Position = UDim2.new(0, 50, 0, 50)
+Frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+Frame.Active = true
+Frame.Draggable = true
 
--- Visual Tab
-local VisualTab = Window:CreateTab("👁️ Visual", 4483362458)
-VisualTab:CreateToggle({
-    Name = "Enable ESP",
-    CurrentValue = false,
-    Callback = function(Value) ESPEnabled = Value end,
-})
+local ESPButton = Instance.new("TextButton", Frame)
+ESPButton.Size = UDim2.new(0, 200, 0, 50)
+ESPButton.Position = UDim2.new(0, 25, 0, 20)
+ESPButton.Text = "Toggle ESP (OFF)"
+ESPButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+ESPButton.TextColor3 = Color3.new(1, 1, 1)
 
--- UI Settings
-local SettingsTab = Window:CreateTab("⚙️ UI Settings", 4483362458)
-SettingsTab:CreateKeybind({
-    Name = "Toggle UI",
-    CurrentKeybind = "RightControl",
-    HoldToInteract = false,
-    Callback = function() Rayfield:Toggle() end,
-})
-SettingsTab:CreateColorPicker({
-    Name = "FOV Circle Color",
-    Color = Color3.fromRGB(0,255,0),
-    Callback = function(Value) FOVCircle.Color = Value end,
-})
+ESPButton.MouseButton1Click:Connect(function()
+    ESPEnabled = not ESPEnabled
+    ESPButton.Text = "Toggle ESP (" .. (ESPEnabled and "ON" or "OFF") .. ")"
+end)
+
+local AimbotButton = Instance.new("TextButton", Frame)
+AimbotButton.Size = UDim2.new(0, 200, 0, 50)
+AimbotButton.Position = UDim2.new(0, 25, 0, 90)
+AimbotButton.Text = "Toggle Aimbot (OFF)"
+AimbotButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+AimbotButton.TextColor3 = Color3.new(1, 1, 1)
+
+AimbotButton.MouseButton1Click:Connect(function()
+    AimbotEnabled = not AimbotEnabled
+    AimbotButton.Text = "Toggle Aimbot (" .. (AimbotEnabled and "ON" or "OFF") .. ")"
+end)
+
+local SmoothLabel = Instance.new("TextLabel", Frame)
+SmoothLabel.Size = UDim2.new(0, 200, 0, 30)
+SmoothLabel.Position = UDim2.new(0, 25, 0, 160)
+SmoothLabel.Text = "Smoothness: " .. tostring(Smoothness)
+SmoothLabel.BackgroundTransparency = 1
+SmoothLabel.TextColor3 = Color3.new(1, 1, 1)
+
+local SmoothSlider = Instance.new("TextButton", Frame)
+SmoothSlider.Size = UDim2.new(0, 200, 0, 30)
+SmoothSlider.Position = UDim2.new(0, 25, 0, 200)
+SmoothSlider.Text = "Increase Smoothness"
+SmoothSlider.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+SmoothSlider.TextColor3 = Color3.new(1, 1, 1)
+
+SmoothSlider.MouseButton1Click:Connect(function()
+    Smoothness = Smoothness + 0.05
+    if Smoothness > 1 then Smoothness = 0 end
+    SmoothLabel.Text = "Smoothness: " .. string.format("%.2f", Smoothness)
+end)
+
+local CloseButton = Instance.new("TextButton", Frame)
+CloseButton.Size = UDim2.new(0, 200, 0, 30)
+CloseButton.Position = UDim2.new(0, 25, 0, 250)
+CloseButton.Text = "Close UI"
+CloseButton.BackgroundColor3 = Color3.fromRGB(120, 0, 0)
+CloseButton.TextColor3 = Color3.new(1, 1, 1)
+
+CloseButton.MouseButton1Click:Connect(function()
+    ScreenGui.Enabled = false
+end)
