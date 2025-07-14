@@ -1,27 +1,49 @@
---// SkyWare - by jeeqz11
+-- SkyWare v2 - By jeeqz11 for Arsenal
 
+--// SERVICES
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local UIS = game:GetService("UserInputService")
+local UserInputService = game:GetService("UserInputService")
+local StarterGui = game:GetService("StarterGui")
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 
-local AimbotEnabled, ESPEnabled = false, false
+--// VARIABLES
+local AimbotEnabled, ESPEnabled, BoxESPEnabled, TracerEnabled = false, false, false, false
+local TeamCheckAimbot, TeamCheckESP = true, true
 local Smoothness, FOVSize = 0.2, 120
-local TeamCheck = true
 local AimPart = "Head"
+local ESPColor = Color3.fromRGB(0, 255, 0)
+local AimbotKey = Enum.UserInputType.MouseButton2
 local Holding = false
+local FOVCircleEnabled = true
+local FOVCircle
 
--- Aimbot logic
+--// FOV Circle Setup
+function CreateFOVCircle()
+    if FOVCircle then
+        FOVCircle:Remove()
+    end
+    FOVCircle = Drawing.new("Circle")
+    FOVCircle.Color = Color3.fromRGB(255, 255, 255)
+    FOVCircle.Thickness = 1
+    FOVCircle.Filled = false
+    FOVCircle.Radius = FOVSize
+    FOVCircle.Visible = FOVCircleEnabled
+end
+
+CreateFOVCircle()
+
+--// GET CLOSEST FUNCTION
 local function IsEnemy(player)
     return player.Team ~= LocalPlayer.Team
 end
 
 local function GetClosest()
     local closest, dist = nil, math.huge
-    local mouseLocation = UIS:GetMouseLocation()
+    local mouseLocation = UserInputService:GetMouseLocation()
     for _, player in ipairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild(AimPart) and (not TeamCheck or IsEnemy(player)) then
+        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild(AimPart) and (not TeamCheckAimbot or IsEnemy(player)) then
             local pos, visible = Camera:WorldToViewportPoint(player.Character[AimPart].Position)
             if visible then
                 local mag = (Vector2.new(pos.X, pos.Y) - Vector2.new(mouseLocation.X, mouseLocation.Y)).Magnitude
@@ -34,14 +56,14 @@ local function GetClosest()
     return closest
 end
 
-UIS.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton2 then
+UserInputService.InputBegan:Connect(function(input)
+    if input.UserInputType == AimbotKey then
         Holding = true
     end
 end)
 
-UIS.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton2 then
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == AimbotKey then
         Holding = false
     end
 end)
@@ -56,13 +78,22 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- ESP logic
+RunService.RenderStepped:Connect(function()
+    if FOVCircle then
+        local mouse = UserInputService:GetMouseLocation()
+        FOVCircle.Position = Vector2.new(mouse.X, mouse.Y)
+        FOVCircle.Visible = FOVCircleEnabled
+        FOVCircle.Radius = FOVSize
+    end
+end)
+
+--// ESP
 local Highlights = {}
 
-local function CreateESP(player)
+local function CreateHighlight(player)
     if Highlights[player] then return end
     local highlight = Instance.new("Highlight")
-    highlight.FillColor = Color3.fromRGB(0, 255, 0)
+    highlight.FillColor = ESPColor
     highlight.FillTransparency = 0.4
     highlight.OutlineTransparency = 0
     highlight.Adornee = player.Character
@@ -70,7 +101,7 @@ local function CreateESP(player)
     Highlights[player] = highlight
 end
 
-local function RemoveESP(player)
+local function RemoveHighlight(player)
     if Highlights[player] then
         Highlights[player]:Destroy()
         Highlights[player] = nil
@@ -79,48 +110,55 @@ end
 
 local function UpdateESP()
     for _, player in ipairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer and player.Character and (not TeamCheck or IsEnemy(player)) then
+        if player ~= LocalPlayer and player.Character and (not TeamCheckESP or IsEnemy(player)) then
             if ESPEnabled then
-                CreateESP(player)
+                CreateHighlight(player)
             else
-                RemoveESP(player)
+                RemoveHighlight(player)
             end
         else
-            RemoveESP(player)
+            RemoveHighlight(player)
         end
     end
 end
 
-Players.PlayerAdded:Connect(function(player)
-    player.CharacterAdded:Connect(function()
+Players.PlayerAdded:Connect(function(p)
+    p.CharacterAdded:Connect(function()
         wait(1)
         if ESPEnabled then
-            CreateESP(player)
+            CreateHighlight(p)
         end
     end)
 end)
 
 RunService.RenderStepped:Connect(UpdateESP)
 
--- UI
+--// UI
 local ScreenGui = Instance.new("ScreenGui", game:GetService("CoreGui"))
-ScreenGui.Name = "SkyWareUI"
+ScreenGui.Name = "SkyWareV2"
 
 local MainFrame = Instance.new("Frame", ScreenGui)
-MainFrame.Size = UDim2.new(0, 500, 0, 300)
+MainFrame.Size = UDim2.new(0, 500, 0, 350)
 MainFrame.Position = UDim2.new(0, 50, 0, 50)
 MainFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
 MainFrame.Active = true
 MainFrame.Draggable = true
 
--- Tabs
+local Title = Instance.new("TextLabel", MainFrame)
+Title.Size = UDim2.new(1, 0, 0, 40)
+Title.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+Title.Text = "SkyWare v2"
+Title.TextColor3 = Color3.new(1, 1, 1)
+Title.TextSize = 24
+
 local TabsFrame = Instance.new("Frame", MainFrame)
-TabsFrame.Size = UDim2.new(0, 120, 1, 0)
-TabsFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+TabsFrame.Size = UDim2.new(0, 120, 1, -40)
+TabsFrame.Position = UDim2.new(0, 0, 0, 40)
+TabsFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 
 local ContentFrame = Instance.new("Frame", MainFrame)
-ContentFrame.Size = UDim2.new(1, -120, 1, 0)
-ContentFrame.Position = UDim2.new(0, 120, 0, 0)
+ContentFrame.Size = UDim2.new(1, -120, 1, -40)
+ContentFrame.Position = UDim2.new(0, 120, 0, 40)
 ContentFrame.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
 
 local function ClearContent()
@@ -143,39 +181,10 @@ local function CreateTab(name, callback)
     end)
 end
 
--- Aimbot tab
-CreateTab("Aimbot", function()
-    local Toggle = Instance.new("TextButton", ContentFrame)
-    Toggle.Size = UDim2.new(0, 250, 0, 50)
-    Toggle.Position = UDim2.new(0, 20, 0, 20)
-    Toggle.Text = "Aimbot: OFF"
-    Toggle.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
-    Toggle.TextColor3 = Color3.new(1, 1, 1)
-
-    Toggle.MouseButton1Click:Connect(function()
-        AimbotEnabled = not AimbotEnabled
-        Toggle.Text = "Aimbot: " .. (AimbotEnabled and "ON" or "OFF")
-    end)
-
-    local Smooth = Instance.new("TextButton", ContentFrame)
-    Smooth.Size = UDim2.new(0, 250, 0, 50)
-    Smooth.Position = UDim2.new(0, 20, 0, 90)
-    Smooth.Text = "Smoothness: " .. string.format("%.2f", Smoothness)
-    Smooth.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
-    Smooth.TextColor3 = Color3.new(1, 1, 1)
-
-    Smooth.MouseButton1Click:Connect(function()
-        Smoothness = Smoothness + 0.05
-        if Smoothness > 1 then Smoothness = 0
-        end
-        Smooth.Text = "Smoothness: " .. string.format("%.2f", Smoothness)
-    end)
-end)
-
--- ESP tab
-CreateTab("ESP", function()
+--// Visuals Tab
+CreateTab("Visuals", function()
     local ToggleESP = Instance.new("TextButton", ContentFrame)
-    ToggleESP.Size = UDim2.new(0, 250, 0, 50)
+    ToggleESP.Size = UDim2.new(0, 300, 0, 40)
     ToggleESP.Position = UDim2.new(0, 20, 0, 20)
     ToggleESP.Text = "ESP: OFF"
     ToggleESP.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
@@ -186,16 +195,56 @@ CreateTab("ESP", function()
         ToggleESP.Text = "ESP: " .. (ESPEnabled and "ON" or "OFF")
     end)
 
-    local TeamCheckToggle = Instance.new("TextButton", ContentFrame)
-    TeamCheckToggle.Size = UDim2.new(0, 250, 0, 50)
-    TeamCheckToggle.Position = UDim2.new(0, 20, 0, 90)
-    TeamCheckToggle.Text = "Team Check: ON"
-    TeamCheckToggle.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
-    TeamCheckToggle.TextColor3 = Color3.new(1, 1, 1)
+    local ToggleTeam = Instance.new("TextButton", ContentFrame)
+    ToggleTeam.Size = UDim2.new(0, 300, 0, 40)
+    ToggleTeam.Position = UDim2.new(0, 20, 0, 80)
+    ToggleTeam.Text = "Team Check: ON"
+    ToggleTeam.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+    ToggleTeam.TextColor3 = Color3.new(1, 1, 1)
 
-    TeamCheckToggle.MouseButton1Click:Connect(function()
-        TeamCheck = not TeamCheck
-        TeamCheckToggle.Text = "Team Check: " .. (TeamCheck and "ON" or "OFF")
+    ToggleTeam.MouseButton1Click:Connect(function()
+        TeamCheckESP = not TeamCheckESP
+        ToggleTeam.Text = "Team Check: " .. (TeamCheckESP and "ON" or "OFF")
     end)
 end)
 
+--// Aimbot Tab
+CreateTab("Aimbot", function()
+    local ToggleAimbot = Instance.new("TextButton", ContentFrame)
+    ToggleAimbot.Size = UDim2.new(0, 300, 0, 40)
+    ToggleAimbot.Position = UDim2.new(0, 20, 0, 20)
+    ToggleAimbot.Text = "Aimbot: OFF"
+    ToggleAimbot.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+    ToggleAimbot.TextColor3 = Color3.new(1, 1, 1)
+
+    ToggleAimbot.MouseButton1Click:Connect(function()
+        AimbotEnabled = not AimbotEnabled
+        ToggleAimbot.Text = "Aimbot: " .. (AimbotEnabled and "ON" or "OFF")
+    end)
+
+    local ToggleFOV = Instance.new("TextButton", ContentFrame)
+    ToggleFOV.Size = UDim2.new(0, 300, 0, 40)
+    ToggleFOV.Position = UDim2.new(0, 20, 0, 80)
+    ToggleFOV.Text = "FOV Circle: ON"
+    ToggleFOV.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+    ToggleFOV.TextColor3 = Color3.new(1, 1, 1)
+
+    ToggleFOV.MouseButton1Click:Connect(function()
+        FOVCircleEnabled = not FOVCircleEnabled
+        ToggleFOV.Text = "FOV Circle: " .. (FOVCircleEnabled and "ON" or "OFF")
+    end)
+end)
+
+--// Misc Tab
+CreateTab("Misc", function()
+    local CloseButton = Instance.new("TextButton", ContentFrame)
+    CloseButton.Size = UDim2.new(0, 300, 0, 40)
+    CloseButton.Position = UDim2.new(0, 20, 0, 20)
+    CloseButton.Text = "Close UI"
+    CloseButton.BackgroundColor3 = Color3.fromRGB(120, 0, 0)
+    CloseButton.TextColor3 = Color3.new(1, 1, 1)
+
+    CloseButton.MouseButton1Click:Connect(function()
+        ScreenGui.Enabled = false
+    end)
+end)
